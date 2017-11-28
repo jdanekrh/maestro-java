@@ -4,6 +4,8 @@ import net.orpiske.mpt.common.worker.MaestroReceiverWorker;
 import net.orpiske.mpt.common.worker.MaestroWorker;
 import net.orpiske.mpt.common.writers.LatencyWriter;
 import org.HdrHistogram.Histogram;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public final class WorkerLatencyWriter implements Runnable {
+    private static final Logger logger = LoggerFactory.getLogger(WorkerLatencyWriter.class);
 
     private static final class WorkerIntervalReport {
         private final MaestroWorker worker;
@@ -68,6 +71,8 @@ public final class WorkerLatencyWriter implements Runnable {
 
         public void outputReport() {
             if (this.intervalHistogram != null && this.intervalHistogram.getTotalCount() > 0) {
+                logger.warn("Output the histogram stuff");
+                System.err.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAasdfsdfasd");
                 this.latencyWriter.outputIntervalHistogram(this.intervalHistogram);
             }
         }
@@ -76,7 +81,7 @@ public final class WorkerLatencyWriter implements Runnable {
     private final List<? extends MaestroWorker> workers;
     private final File reportFolder;
     //TODO make it configurable
-    private final long reportingIntervalMs = TimeUnit.SECONDS.toMillis(10);
+    private final long reportingIntervalMs = TimeUnit.SECONDS.toMillis(1);
     private final boolean reportIntervalLatencies = false;
 
 
@@ -87,6 +92,7 @@ public final class WorkerLatencyWriter implements Runnable {
 
     private static long getCurrentTimeMsecWithDelay(final long nextReportingTime) throws InterruptedException {
         final long now = System.currentTimeMillis();
+        System.err.println("Now = " + now + " Next reporting time = " + nextReportingTime);
         if (now < nextReportingTime)
             Thread.sleep(nextReportingTime - now);
         return now;
@@ -111,6 +117,9 @@ public final class WorkerLatencyWriter implements Runnable {
                 try {
                     while (!currentThread.isInterrupted()) {
                         final long now = getCurrentTimeMsecWithDelay(nextReportingTime);
+
+                        System.err.println("Running the recording loop: " + now);
+                        System.err.println("Reporting interval = " + reportingIntervalMs);
                         //the overall update + output process could take more than the reportingIntervalMs
                         //sample
                         workerReports.forEach(WorkerIntervalReport::updateReport);

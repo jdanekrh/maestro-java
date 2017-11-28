@@ -62,13 +62,12 @@ public class TestFlowTest extends EndToEndTest {
     TODO: this test is ignored because the workers are not yet sending the
     success/failure notifications
     */
-    @Ignore
-    @Test
+    @Test(timeout = 60000)
     public void testSimpleTest() throws Exception {
         System.out.println("Running a short-lived test");
 
         maestro.setParallelCount(1);
-        maestro.setDuration("5");
+        maestro.setDuration("30s");
         maestro.setMessageSize(100);
         maestro.setFCL(1000);
         maestro.setRate(100);
@@ -84,7 +83,7 @@ public class TestFlowTest extends EndToEndTest {
         maestro.startReceiver();
 
         // Get the OK replies
-        replies = maestro.collect(1000, 10, 2);
+        replies = maestro.collect(1000, 30, 2);
 
         Thread.sleep(2000);
 
