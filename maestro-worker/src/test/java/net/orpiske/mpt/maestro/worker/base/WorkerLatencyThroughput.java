@@ -105,7 +105,7 @@ public class WorkerLatencyThroughput {
             workerThreads[i].setDaemon(true);
             workerThreads[i].setName("worker-" + workerIndex);
         }
-        final WorkerLatencyWriter channelWriter = reportingIntervalMillis > 0 ? new WorkerLatencyWriter(reportFolder, Arrays.asList(maestroWorkers), reportingIntervalMillis) : new WorkerLatencyWriter(reportFolder, Arrays.asList(maestroWorkers));
+        final WorkerLatencyWriter channelWriter = reportingIntervalMillis > 0 ? new WorkerLatencyWriter(reportFolder, Arrays.asList(maestroWorkers), reportingIntervalMillis, null) : new WorkerLatencyWriter(reportFolder, Arrays.asList(maestroWorkers), null);
         final Thread writerThread = new Thread(channelWriter);
         writerThread.start();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

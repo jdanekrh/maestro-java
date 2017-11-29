@@ -1,7 +1,10 @@
 package net.orpiske.mpt.maestro.worker.base;
 
 import net.orpiske.mpt.common.client.MaestroReceiver;
+import net.orpiske.mpt.common.evaluators.Evaluator;
+import net.orpiske.mpt.common.worker.MaestroWorker;
 import net.orpiske.mpt.common.worker.WorkerStateInfo;
+import org.HdrHistogram.Histogram;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +25,7 @@ class WorkerWatchdog implements Runnable {
     private MaestroReceiver endpoint;
     private volatile boolean running = false;
     private final Consumer<? super List<WorkerRuntimeInfo>> onWorkersStopped;
+    private Evaluator<?> evaluator;
 
 
     /**
@@ -29,10 +33,13 @@ class WorkerWatchdog implements Runnable {
      * @param workers A list of workers to inspect
      * @param endpoint The maestro endpoint that is to be notified of the worker status
      */
-    public WorkerWatchdog(List<WorkerRuntimeInfo> workers, MaestroReceiver endpoint, Consumer<? super List<WorkerRuntimeInfo>> onWorkersStopped) {
+    public WorkerWatchdog(List<WorkerRuntimeInfo> workers, MaestroReceiver endpoint,
+                          Consumer<? super List<WorkerRuntimeInfo>> onWorkersStopped,
+                          Evaluator<?> evaluator) {
         this.workers = new ArrayList<>(workers);
         this.onWorkersStopped = onWorkersStopped;
         this.endpoint = endpoint;
+        this.evaluator = evaluator;
     }
 
 
@@ -63,6 +70,16 @@ class WorkerWatchdog implements Runnable {
         try {
             while (running && workersRunning()) {
                 try {
+                    if (evaluator != null) {
+                        if (!evaluator.eval()) {
+                            endpoint.notifyFailure("The evaluation of the latency condition failed");
+                            
+                            WorkerContainer container = WorkerContainer.getInstance(null);
+
+                            container.stop();
+                        }
+                    }
+
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();

@@ -99,6 +99,19 @@ public class WorkerOptions {
         return fcl;
     }
 
+    public Double getFclAsDouble() {
+        if (fcl != null) {
+            try {
+                return Double.parseDouble(fcl);
+            }
+            catch (Exception e) {
+
+            }
+        }
+
+        return null;
+    }
+
 
     /**
      * Sets the fail-condition-on-latency fail condition

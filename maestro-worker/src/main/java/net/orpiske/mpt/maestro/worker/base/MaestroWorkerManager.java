@@ -1,5 +1,6 @@
 package net.orpiske.mpt.maestro.worker.base;
 
+import net.orpiske.mpt.common.evaluators.LatencyEvaluator;
 import net.orpiske.mpt.common.exceptions.DurationParseException;
 import net.orpiske.mpt.common.exceptions.MaestroConnectionException;
 import net.orpiske.mpt.common.exceptions.MaestroException;
@@ -38,6 +39,9 @@ public class MaestroWorkerManager extends AbstractMaestroPeer<MaestroEvent> impl
     private WorkerOptions workerOptions;
     private Thread latencyWriterThread;
     private Thread rateWriterThread;
+
+    // TODO: should support other evaluations in the future
+    private LatencyEvaluator latencyEvaluator;
 
     private boolean running = true;
 
@@ -203,18 +207,24 @@ public class MaestroWorkerManager extends AbstractMaestroPeer<MaestroEvent> impl
             logger.warn("Unable to write test properties: {}", e.getMessage(), e);
         }
 
+        Double givenLatency = workerOptions.getFclAsDouble();
+        if (givenLatency != null) {
+            this.latencyEvaluator = new LatencyEvaluator(givenLatency);
+        }
+
         try {
             final List<MaestroWorker> workers = new ArrayList<>();
             logger.debug("Starting the workers {}", workerClass);
-            container.start(workerClass, workers, this::onStoppedWorkers);
+            container.start(workerClass, workers, this::onStoppedWorkers, latencyEvaluator);
 
             if (workers.isEmpty()) {
                 logger.warn("No workers has been started!");
             } else {
                 logger.debug("Creating the writer threads");
-                WorkerLatencyWriter latencyWriter = new WorkerLatencyWriter(testLogDir, workers);
+                WorkerLatencyWriter latencyWriter = new WorkerLatencyWriter(testLogDir, workers, latencyEvaluator);
                 final Thread latencyThread = new Thread(latencyWriter);
                 this.latencyWriterThread = latencyThread;
+
                 WorkerChannelWriter rateWriter = new WorkerChannelWriter(testLogDir, workers);
                 final Thread rateThread = new Thread(rateWriter);
                 this.rateWriterThread = rateThread;
